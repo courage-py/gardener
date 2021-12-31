@@ -9,7 +9,7 @@ class GardenerJSON(JSONEncoder):
         if isinstance(obj, Node):
             return {
                 "key": obj.key,
-                "props": {key: value for key, value in self.props.items()},
+                "props": {key: value for key, value in obj.props.items()},
             }
         return super().default()
 
