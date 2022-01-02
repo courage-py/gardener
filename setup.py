@@ -9,8 +9,8 @@ class About:
         "License :: OSI Approved :: MIT License",
     ]
     title = "gardener"
-    description = "Dynamic grammar generator for Lark parsing toolkit"
-    version = "1.0.1"
+    description = "Tree manipulation module"
+    version = "1.0.2"
     author = "evtn"
     author_email = "courage@evtn.ru"
     license = "MIT"
