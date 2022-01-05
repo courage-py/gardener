@@ -10,7 +10,7 @@ class About:
     ]
     title = "gardener"
     description = "Tree manipulation module"
-    version = "1.0.2"
+    version = "1.0.3"
     author = "evtn"
     author_email = "courage@evtn.ru"
     license = "MIT"

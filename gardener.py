@@ -11,7 +11,7 @@ class GardenerJSON(JSONEncoder):
                 "key": obj.key,
                 "props": {key: value for key, value in obj.props.items()},
             }
-        return super().default()
+        return super().default(obj)
 
 
 class Namespace:
