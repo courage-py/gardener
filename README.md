@@ -1,230 +1,264 @@
-# gardener - simple tree manipulation module
-
-## Basic usage
-
-```python
-from gardener import Node, register_hook
-
-@register_hook("child")
-def child(node):
-    return Node.another_child(
-        values=[value * 2 for value in node.values]
-    )
-
-
-tree = Node.root(
-    value=56,
-    some_property=Node.child(
-        values=[10, 20, 80]
-    )
-)
-
-
-print(tree.pretty())
-"""
-{
-  "key": "root",
-  "props": {
-    "value": 56,
-    "some_property": {
-      "key": "another_child",
-      "props": {
-        "values": [
-          20,
-          40,
-          160
-        ]
-      }
-    }
-  }
-}
-"""
-```
+**gardener** is a simple tree manipulation module. It provides a hook-based tree transformation.
 
 ## Installation
 
-`python -m pip install gardener`
+`gardener` is available on PyPi:    
 
-## Getting started
+`python -m pip install gardener` (or any other package manager)
 
-Gardener is useful for tree manipulation (building and transforming complex trees)
+## Basic example
 
-To start working with it, you need to understand a few concepts:
+This is a simple example usage, a hook that transforms every `tag` node into a string:
 
-*hook* is a function called on node creation. It can create a brand new node or change current one.    
-*node* is an object with a *key* - string identifier and *props* - an arbitrary dictionary
-
-## Building a tree
-
-To build a tree, you can use `Node.name[.name2.name3...](**props)`:
 
 ```python
-from gardener import Node
+from gardener import make_node, register_hook, Node
 
 
-root = Node.root() # props={}, key="root"
-oak = Node.tree.oak(age=23) # props={"age": 23}, key="tree:oak"
-long_name = Node.very.long.node.key() # props={}, key="very:long:node:key"
+@register_hook("tag")
+def tag_hook(node: Node) -> str:
+    return f"tag:{node['i']}{node['children', []]}"
+
+
+x: str = make_node(
+    "tag",
+    children=[
+        make_node("tag", i=i) 
+        for i in range(10)
+    ],
+    i=99
+)
+
+print(x) # tag:99['tag:0[]', 'tag:1[]', 'tag:2[]', 'tag:3[]', 'tag:4[]', 'tag:5[]', 'tag:6[]', 'tag:7[]', 'tag:8[]', 'tag:9[]']
 ```
 
-Arbitrary name length makes it possible to create namespaces:
+## Combining hooks and transforming nodes
 
 ```python
-from gardener import Node
+from gardener import make_node, register_hook, Node
+from operator import add, sub, mul, truediv
 
-tree = Node.tree
 
-tree.oak(age=23) # props={"age": 23}, key="tree:oak"
-tree.pine(age=2) # props={"age": 2}, key="tree:pine"
+operators = {
+    "+": add,
+    "-": sub,
+    "*": mul,
+    "/": truediv
+}
 
-```
+@register_hook("+", "-", "*", "/")
+def binary_expr(node: Node) -> float:
+    op = node.key[0] # node.key is a 1-element tuple, e.g. ('+', )
+    op_func = operators[op]
+    
+    parts = node["parts", []]
+    
+    if not parts:
+        if op in "+-":
+            return 0 # empty sum
+        return 1 # empty product
+    
+    result = parts[0]
+    
+    for i in range(1, len(parts)):
+        result = op_func(result, parts[i])
+    
+    return result
 
-## Hooks
 
-To transform your tree, you can define any number of hooks.    
-Hooks are called on node creation, in order they were defined - hooks defined earlier would be called earlier.    
-
-A hook is just a function getting node as argument and returning a transformed node.    
-To define hook, use `register_hook(key)`:    
-
-```python
-from gardener import Node, register_hook
-
-@register_hook("car")
-def make_any_car_faster(node):
-    node.engine.horsepower = node.engine.horsepower * 5
-    return node
-
-@register_hook("engine")
-def engine_tweak(node):
-    node.horsepower -= 1
-    return node
-
-@register_hook("car")
-def no_red_cars(node):
-    if node.color == "red":
-        node.color = "black"
-    return node
-
-@register_hook("car")
-def make_supercar(node):
-    if node.engine.horsepower > 500:
-        return Node.supercar(**node.props)
-    return node
-
-parking_lot = Node.lot(
-    cars=[
-        Node.car(
-            engine=Node.engine(horsepower=100),
-            color="red"
-        ),
-        Node.car(
-            engine=Node.engine(horsepower=200),
-            color="white"
-        ),
-        Node.car(
-            engine=Node.engine(horsepower=205),
-            color="red"
-        ),
+x: float = make_node(
+    "+",
+    parts=[
+        3,
+        make_node("*", parts=[5, 6]) # 30
     ]
 )
-# notice how car.engine.horsepower is (x - 1) * 5 because engine is created before the car
-print(parking_lot.pretty())
+
+print(x) # 33
+```
+
+Let's add exponentiation to this calculator. The trick is that power is right-associative (so that `2 ** 2 ** 3` equals `2 ** (2 ** 3)`, not `(2 ** 2) ** 3`).    
+You can obviously write a separate hook for that, but we can just combine hooks:
+
+```python
+from gardener import make_node, register_hook, Node
+from operator import add, sub, mul, truediv
+
+
+operators = {
+    "+": add,
+    "-": sub,
+    "*": mul,
+    "/": truediv,
+    "**": lambda x, y: pow(y, x) # reversing order there, so that we can reverse the order of all elements
+}
+
 """
-{
-  "key": "lot",
-  "props": {
-    "cars": [
-      {
-        "key": "car",
-        "props": {
-          "engine": {
-            "key": "engine",
-            "props": {
-              "horsepower": 495
-            }
-          },
-          "color": "black"
-        }
-      },
-      {
-        "key": "supercar",
-        "props": {
-          "engine": {
-            "key": "engine",
-            "props": {
-              "horsepower": 995
-            }
-          },
-          "color": "white"
-        }
-      },
-      {
-        "key": "supercar",
-        "props": {
-          "engine": {
-            "key": "engine",
-            "props": {
-              "horsepower": 1020
-            }
-          },
-          "color": "black"
-        }
-      }
+
+This hook, instead of producing a new non-node value, just edits the node contents.
+This allows the hook chain to continue to `binary_expr` hook
+
+Be aware that the order of hook apply is the same as their registration.
+
+"""
+@register_hook("**")
+def power_reverse(node: Node) -> Node:
+    node["parts"] = node["parts", []][::-1]
+    return node
+
+
+@register_hook("+", "-", "*", "/", "**")
+def binary_expr(node: Node) -> float:
+    op = node.key[0] # node.key is a 1-element tuple, e.g. ('+', )
+    op_func = operators[op]
+    
+    parts = node["parts", []]
+    
+    if not parts:
+        if op in "+-":
+            return 0 # empty sum
+        return 1 # empty product
+    
+    result = parts[0]
+    
+    for i in range(1, len(parts)):
+        result = op_func(result, parts[i])
+    
+    return result
+
+
+x: float = make_node(
+    "+",
+    parts=[
+        3,
+        make_node("*", parts=[5, 6]), # 30
+        make_node("**", parts=[2, 2, 3]) # 256
     ]
-  }
-}
-"""
+)
+
+print(x) # 289
 ```
 
-*Important notes*:    
-- if your hook changes existing node (but key remains the same) - use node.copy() or make changes in place.    
-- if you change the key of the node, make a new node.    
+This, of course, may not be the most efficient or obvious way, but `gardener` doesn't impose any restrictions on how you might approach a problem
 
-First is needed to avoid infinite recursion (otherwise your hook would be called again and again on the same node).    
-Second is needed to ensure hooks are called on the new node.    
+## Node props
 
-## Pretty printing
+Examples above have shown how to set initial props of a `Node`. To get and edit those props, use bracket notation:
 
-Gardener uses built-in `json` module to make a pretty-printed tree:
 
 ```python
-from gardener import Node
+from gardener import make_node
 
-print(Node.tree.oak(age=23).pretty())
-"""
-{
-  "key": "tree:oak",
-  "props": {
-    "age": 23
-  }
-}
-"""
+node = make_node("test")
+
+node["a"] = 10 # accepts any type of value, but key must be a string
+print(node["a"]) # prints 10
+print(node["b", 0]) # prints 0 (default value)
+print(node["b"]) # raises KeyError
+
 ```
 
-If your values are JSON serializable, this would work out-of-the-box.    
-Otherwise you will need to extend GardenerJSON class:
+## Hook evaluation order
+
+Hook ordering is simple:
+
+1. Hooks run at the node creation, there is no way to get a node that wasn't processed with relevant hooks (if there were any) 
+    *except creating a `Node` object directly, which is discouraged*
+2. Hooks are run in registration order, because when you register a hook, it's appended to the end of the list for that key. 
+    *you can change the order by editing `scope.hooks[key]` directly (check Scopes below)*
+
+## Scoping
+
+Often it is convenient to have different trees in one project, using different hooks.    
+While this can be done through namespacing (`make_node` actually also accepts node key as a `str | tuple[str, ...]`), that approach would force you to write long names in node creating and hook registration.    
+
+`gardener` provides you with a more convenient approach: `Scope` objects. A scope is an isolated store with hooks:
 
 ```python
-from gardener import Node, GardenerJSON
+from gardener import Scope, Node
 
-class MyGardenerJSON(GardenerJSON):
-    def default(self, obj):
-        if obj is Ellipsis:
-            return "..." # return any JSON serializable object
+
+scope1 = Scope("scope1") # key is optional and it doesn't affect scope behaviour
+scope2 = Scope("scope2")
+
+
+@scope1.register_hook("i")
+def print_stuff_1(node: Node) -> Node:
+    print("this is the first scope")
+    return node
+
+@scope2.register_hook("i")
+def print_stuff_2(node: Node) -> Node:
+    print("this is the second scope")
+    return node
+
+@scope1.register_hook("i")
+@scope2.register_hook("i")
+def print_stuff_both(node: Node) -> Node:
+    print("this is both scopes")
+    return node
+
+
+# prints "this is the first scope"
+# prints "this is both scopes"
+scope1.make_node("i")
+
+
+# prints "this is the second scope"
+# prints "this is both scopes"
+scope2.make_node("i")
+```
+
+You can get all of the scope hooks with `scope.hooks`. It has type `dict[tuple[str, ...], list[HookType]]`.    
+To get the scope of the current node (e.g. in a hook, use `node.scope`)    
+
+Global `make_node` and `register_hook` are, in fact, methods of `gardener.core.default_scope`
+
+
+## Applying hooks multiple times
+
+To apply a hook to a node multiple times, call `node.transform()` — it would return the result of another chain of transformations.    
+**Be careful about using it in hooks, as this could easily lead to infinite recursion if not handled properly.**    
+
+## Node printing
+
+If your node props are JSON-serializable, you can run `node.pretty(**dumps_kwargs)` to get a pretty indented JSON representation of the node.    
+Node class itself is JSON-serializable (only with `NodeJSON` as an encoder).
+
+To represent non-JSON-serializable data, you will need to provide an encoder class:
+
+```python
+from gardener import make_node
+from gardener.core import NodeJSON
+from typing import Any
+
+
+class SomeCoolDataClass: # your custom class
+    def __init__(self, x: int):
+        self.x = x
+
+
+class MyNodeJSON(NodeJSON):
+    def default(self, obj: Any):
+        if isinstance(obj, SomeCoolDataClass):
+            return f"SomeCoolDataClass<{obj.x}>" # return any serializable data here (can contain nodes or, e.g. SomeCoolDataClass inside)
         return super().default(obj)
 
-# Ellipsis is not JSON serializable
-print(Node.tree.oak(cool_object=Ellipsis).pretty(cls=MyGardenerJSON))
+
+node = make_node(
+    "cool_data_node",
+    cool_data=SomeCoolDataClass(6)
+)
+
+print(
+    node.pretty(cls=MyNodeJSON) # accepts same arguments (keyword-only) as json.dumps
+)
 """
 {
-  "key": "tree:oak",
+  "key": "cool_data_node",
   "props": {
-    "cool_object": "..."
+    "cool_data": "SomeCoolDataClass<6>"
   }
 }
 """
-
 ```
-
-In fact, `Node.pretty` accepts any keyword argument of `json.dumps`
