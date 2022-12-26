@@ -1,3 +1,12 @@
+[![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/courage-tci/gardener/build.yml?branch=pub)](https://github.com/courage-tci/gardener/actions/workflows/build.yml)
+[![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/courage-tci/gardener/test.yml?branch=pub&label=tests)](https://github.com/courage-tci/gardener/actions/workflows/test.yml)
+[![PyPI](https://img.shields.io/pypi/v/gardener)](https://pypi.org/project/gardener/)
+![PyPI - Downloads](https://pepy.tech/badge/gardener)
+![PyPI - Python Version](https://img.shields.io/pypi/pyversions/gardener)
+[![Coveralls](https://img.shields.io/coverallsCoverage/github/courage-tci/gardener?label=test%20coverage)](https://coveralls.io/github/courage-tci/gardener?branch=pub)
+![License](https://img.shields.io/github/license/courage-tci/gardener)
+![Badge Count](https://img.shields.io/badge/badges-8-important)
+
 **gardener** is a simple tree manipulation module. It provides a hook-based tree transformation.
 
 ## Installation
