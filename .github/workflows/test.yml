@@ -27,7 +27,7 @@ jobs:
           poetry install
 
       - run: python -m pip install mypy
-      - run: python -m mypy gardener/ --pretty --show-error-codes
+      - run: python -m mypy gardener/ --disallow-untyped-defs --disallow-any-generics --pretty --show-error-codes --warn-unreachable
 
       - run: python -m pip install pyright
       - run: python -m pyright gardener/

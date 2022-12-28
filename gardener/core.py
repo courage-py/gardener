@@ -13,7 +13,7 @@ class Scope:
         self.hooks: dict[NodeKey, list[HookType]] = {}
 
     def register_hook(self, *keys: NodeKey | str) -> Callable[[HookType], HookType]:
-        def reg_hook_inner(func: HookType):
+        def reg_hook_inner(func: HookType) -> HookType:
             for key in keys:
                 if isinstance(key, str):
                     key = (key,)
@@ -44,7 +44,7 @@ class Scope:
 
 
 class NodeJSON(JSONEncoder):
-    def default(self, obj: Any):
+    def default(self, obj: Any) -> Any:
         if isinstance(obj, Node):
             key = ":".join(obj.key)
 
@@ -63,22 +63,22 @@ class Node:
         self.props = props
         self.scope = scope
 
-    def pretty(self, **kwargs) -> str:
+    def pretty(self, **kwargs: Any) -> str:
         kwargs = {"indent": 2, "cls": NodeJSON, **kwargs}
         return dumps(self, **kwargs)
 
-    def __getitem__(self, item: str | tuple[str, Any]):
+    def __getitem__(self, item: str | tuple[str, Any]) -> Any:
         if isinstance(item, str):
             return self.props[item]
         return self.props.get(*item)
 
-    def __setitem__(self, item: str, value: Any):
+    def __setitem__(self, item: str, value: Any) -> None:
         self.props[item] = value
 
     def transform(self) -> Any:
         return self.scope.apply_hooks(self)
 
-    def set_key(self, key: str | NodeKey):
+    def set_key(self, key: str | NodeKey) -> None:
         if isinstance(key, str):
             key = (key,)
 
