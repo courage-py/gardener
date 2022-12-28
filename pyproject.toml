@@ -1,9 +1,13 @@
 [tool.poetry]
 name = "gardener"
-version = "2.0.0"
+version = "2.0.1"
 description = "Hook-based tree manipulation library"
 authors = ["Dmitry Gritsenko <k01419q45@ya.ru>"]
 license = "MIT"
+readme = "README.md"
+repository = "https://github.com/courage-tci/gardener"
+homepage = "https://github.com/courage-tci/gardener"
+keywords = ["tree"]
 
 [tool.poetry.dependencies]
 python = "^3.7"
